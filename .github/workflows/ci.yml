@@ -28,6 +28,10 @@ on:
       - main
   workflow_dispatch:  # Manual trigger for on-demand builds
 
+permissions:
+  contents: read
+  security-events: write  # Required for uploading SARIF results to Security tab
+
 env:
   JAVA_VERSION: '17'
   DOCKER_IMAGE_NAME: taskmanager-api
@@ -149,7 +153,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-test
     permissions:
-      actions: read
       contents: read
       security-events: write  # Required for uploading to Security tab
 
@@ -164,7 +167,7 @@ jobs:
       # DETECTS: SQL Injection, XSS, Path Traversal, Command Injection, etc.
       # -----------------------------------------------------------------------
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: java
           # Custom queries for enhanced security scanning
@@ -180,7 +183,7 @@ jobs:
       # AUTOBUILD: CodeQL builds the project to analyze bytecode
       # -----------------------------------------------------------------------
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v4
 
       # -----------------------------------------------------------------------
       # CODEQL ANALYSIS
@@ -189,7 +192,7 @@ jobs:
       # OUTPUT: SARIF results uploaded to GitHub Security tab
       # -----------------------------------------------------------------------
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:java"
 
@@ -251,6 +254,9 @@ jobs:
     name: Docker Build & Security Scan
     runs-on: ubuntu-latest
     needs: [build-and-test, sast-codeql]
+    permissions:
+      contents: read
+      security-events: write  # Needed for github/codeql-action/upload-sarif
     
     steps:
       - name: Checkout Source Code
@@ -313,7 +319,7 @@ jobs:
       # UPLOAD TRIVY RESULTS TO SECURITY TAB
       # -----------------------------------------------------------------------
       - name: Upload Trivy Results to GitHub Security Tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
