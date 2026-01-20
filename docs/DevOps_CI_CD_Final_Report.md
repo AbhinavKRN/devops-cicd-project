@@ -542,10 +542,14 @@ Our Shift-Left Approach:
 
 To provide visual evidence of successful pipeline runs without exceeding the page limit, include **two small screenshots** when exporting this report to PDF or Word:
 
-- **Figure 1 – CI Pipeline Run (GitHub Actions)**  
+- **Figure 1 – CI Pipeline Run (GitHub Actions)**
+  <img width="1200" height="500" alt="image" src="https://github.com/user-attachments/assets/67eb2e97-c589-4912-ae02-193688551e94" />
+ 
   Screenshot of the latest `CI Pipeline` run showing all jobs (Build & Test, SAST, SCA, Docker Build & Scan, Docker Push) in **green**.
 
-- **Figure 2 – CD Pipeline Run (GitHub Actions)**  
+- **Figure 2 – CD Pipeline Run (GitHub Actions)**
+  <img width="1200" height="500" alt="image" src="https://github.com/user-attachments/assets/3adc344a-60db-41a2-a641-0ade1ec6fe53" />
+ 
   Screenshot of the latest `CD Pipeline` run showing all jobs (Pre‑Deployment Validation, Deploy to Kubernetes, DAST Security Scan, Smoke Tests, Deployment Summary) in **green**.
 ---
 
