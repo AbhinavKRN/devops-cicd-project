@@ -538,6 +538,15 @@ Our Shift-Left Approach:
 4. **Reliability**: Pipeline consistently succeeds with clean code
 5. **Observability**: GitHub Security tab provides unified view of findings
 
+### 6.5 CI/CD Execution Evidence (Screenshots)
+
+To provide visual evidence of successful pipeline runs without exceeding the page limit, include **two small screenshots** when exporting this report to PDF or Word:
+
+- **Figure 1 – CI Pipeline Run (GitHub Actions)**  
+  Screenshot of the latest `CI Pipeline` run showing all jobs (Build & Test, SAST, SCA, Docker Build & Scan, Docker Push) in **green**.
+
+- **Figure 2 – CD Pipeline Run (GitHub Actions)**  
+  Screenshot of the latest `CD Pipeline` run showing all jobs (Pre‑Deployment Validation, Deploy to Kubernetes, DAST Security Scan, Smoke Tests, Deployment Summary) in **green**.
 ---
 
 ## 7. Limitations & Improvements
