@@ -1,0 +1,18 @@
+# =============================================================================
+# Kubernetes Namespace for TaskManager API
+# =============================================================================
+# WHY: Isolates application resources from other workloads
+# BENEFIT: Resource quotas, network policies, RBAC at namespace level
+# =============================================================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: taskmanager
+  labels:
+    app: taskmanager-api
+    environment: production
+    managed-by: github-actions
+  annotations:
+    description: "Namespace for TaskManager API application"
+

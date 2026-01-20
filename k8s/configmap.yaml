@@ -1,0 +1,30 @@
+# =============================================================================
+# ConfigMap for TaskManager API
+# =============================================================================
+# WHY: Externalizes configuration from container image
+# BENEFIT: Same image can be deployed to different environments
+# =============================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: taskmanager-config
+  namespace: taskmanager
+  labels:
+    app: taskmanager-api
+data:
+  # Application Configuration
+  SPRING_PROFILES_ACTIVE: "production"
+  SERVER_PORT: "8080"
+  
+  # Logging Configuration
+  LOGGING_LEVEL_ROOT: "INFO"
+  LOGGING_LEVEL_COM_DEVOPS: "INFO"
+  
+  # Actuator Configuration
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"
+  MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: "always"
+  
+  # JVM Options for Kubernetes
+  JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0"
+

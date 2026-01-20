@@ -1,0 +1,168 @@
+# =============================================================================
+# Kubernetes Deployment for TaskManager API
+# =============================================================================
+# WHY: Manages the desired state of application pods
+# FEATURES: Rolling updates, self-healing, scaling
+# =============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: taskmanager-api
+  namespace: taskmanager
+  labels:
+    app: taskmanager-api
+    version: "1.0.0"
+  annotations:
+    kubernetes.io/change-cause: "Deployed via GitHub Actions CD Pipeline"
+spec:
+  # -------------------------------------------------------------------------
+  # Replica Configuration
+  # -------------------------------------------------------------------------
+  replicas: 3
+  
+  # -------------------------------------------------------------------------
+  # Rolling Update Strategy
+  # WHY: Enables zero-downtime deployments
+  # -------------------------------------------------------------------------
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # Max pods above desired count during update
+      maxUnavailable: 0  # Zero downtime - always have desired replicas
+  
+  # -------------------------------------------------------------------------
+  # Pod Selector
+  # -------------------------------------------------------------------------
+  selector:
+    matchLabels:
+      app: taskmanager-api
+  
+  template:
+    metadata:
+      labels:
+        app: taskmanager-api
+        version: "1.0.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/actuator/prometheus"
+    
+    spec:
+      # -----------------------------------------------------------------------
+      # Security Context (Pod Level)
+      # WHY: Runs container as non-root for security
+      # -----------------------------------------------------------------------
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      
+      # -----------------------------------------------------------------------
+      # Service Account
+      # -----------------------------------------------------------------------
+      serviceAccountName: default
+      
+      containers:
+        - name: taskmanager-api
+          # Image will be replaced by CD pipeline
+          image: DOCKERHUB_USERNAME/taskmanager-api:IMAGE_TAG
+          imagePullPolicy: Always
+          
+          # -------------------------------------------------------------------
+          # Container Ports
+          # -------------------------------------------------------------------
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          
+          # -------------------------------------------------------------------
+          # Environment Variables from ConfigMap
+          # -------------------------------------------------------------------
+          envFrom:
+            - configMapRef:
+                name: taskmanager-config
+          
+          # -------------------------------------------------------------------
+          # Resource Limits
+          # WHY: Prevents resource exhaustion, enables proper scheduling
+          # -------------------------------------------------------------------
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          
+          # -------------------------------------------------------------------
+          # Liveness Probe
+          # WHY: Detects if application is alive, restarts if not
+          # -------------------------------------------------------------------
+          livenessProbe:
+            httpGet:
+              path: /api/v1/live
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          
+          # -------------------------------------------------------------------
+          # Readiness Probe
+          # WHY: Determines if pod should receive traffic
+          # -------------------------------------------------------------------
+          readinessProbe:
+            httpGet:
+              path: /api/v1/ready
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          
+          # -------------------------------------------------------------------
+          # Startup Probe
+          # WHY: Gives application time to start before liveness kicks in
+          # -------------------------------------------------------------------
+          startupProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          
+          # -------------------------------------------------------------------
+          # Container Security Context
+          # -------------------------------------------------------------------
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+      
+      # -----------------------------------------------------------------------
+      # Pod Disruption Budget
+      # -----------------------------------------------------------------------
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - taskmanager-api
+                topologyKey: kubernetes.io/hostname
+      
+      # -----------------------------------------------------------------------
+      # Termination Grace Period
+      # -----------------------------------------------------------------------
+      terminationGracePeriodSeconds: 30
+

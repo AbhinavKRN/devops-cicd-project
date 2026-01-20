@@ -1,0 +1,142 @@
+# =============================================================================
+# Kubernetes Service for TaskManager API
+# =============================================================================
+# WHY: Provides stable network endpoint for accessing the application
+# TYPE: ClusterIP for internal access, LoadBalancer for external
+# =============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: taskmanager-api
+  namespace: taskmanager
+  labels:
+    app: taskmanager-api
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+spec:
+  type: ClusterIP
+  
+  # -------------------------------------------------------------------------
+  # Port Configuration
+  # -------------------------------------------------------------------------
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP
+  
+  # -------------------------------------------------------------------------
+  # Pod Selector
+  # -------------------------------------------------------------------------
+  selector:
+    app: taskmanager-api
+
+---
+# =============================================================================
+# Kubernetes Service (LoadBalancer) for External Access
+# =============================================================================
+# WHY: Exposes the application externally (for cloud deployments)
+# =============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: taskmanager-api-external
+  namespace: taskmanager
+  labels:
+    app: taskmanager-api
+spec:
+  type: LoadBalancer
+  
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP
+  
+  selector:
+    app: taskmanager-api
+
+---
+# =============================================================================
+# Horizontal Pod Autoscaler
+# =============================================================================
+# WHY: Automatically scales pods based on resource utilization
+# BENEFIT: Cost optimization and handling traffic spikes
+# =============================================================================
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: taskmanager-api-hpa
+  namespace: taskmanager
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: taskmanager-api
+  
+  minReplicas: 2
+  maxReplicas: 10
+  
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+# =============================================================================
+# Pod Disruption Budget
+# =============================================================================
+# WHY: Ensures minimum availability during voluntary disruptions
+# =============================================================================
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: taskmanager-api-pdb
+  namespace: taskmanager
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: taskmanager-api
+
+---
+# =============================================================================
+# Ingress for External Access (Optional - for Ingress Controller)
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: taskmanager-api-ingress
+  namespace: taskmanager
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: taskmanager.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: taskmanager-api
+                port:
+                  number: 80
+
