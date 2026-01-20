@@ -151,6 +151,18 @@
                 <artifactId>dependency-check-maven</artifactId>
                 <version>${dependency-check.version}</version>
                 <configuration>
+                    <!--
+                        NVD API notes:
+                        - New NVD API requires an API key and aggressively rate-limits anonymous CI/CD traffic.
+                        - In CI this can cause 403 errors when updating the NVD data feed.
+                        - We wire the API key from environment variable NVD_API_KEY when available,
+                          and we also set failOnError=false so that transient NVD outages do not
+                          break the entire CI pipeline. Security findings are still generated
+                          when data is available, and this behavior is documented in the report.
+                    -->
+                    <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+                    <!-- Do not fail build if NVD is temporarily unavailable (403 / rate limiting) -->
+                    <failOnError>false</failOnError>
                     <failBuildOnCVSS>7</failBuildOnCVSS>
                     <formats>
                         <format>HTML</format>

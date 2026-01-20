@@ -131,9 +131,18 @@ jobs:
       - name: Configure Kubernetes Credentials
         run: |
           mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+          if [ -z "${{ secrets.KUBE_CONFIG }}" ]; then
+            echo "KUBE_CONFIG secret is not set. Skipping Kubernetes configuration (demo mode)."
+            exit 0
+          fi
+
+          # Try to treat KUBE_CONFIG as base64-encoded first; if that fails, fall back to raw YAML.
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config 2>/dev/null || {
+            echo "KUBE_CONFIG does not appear to be valid base64. Writing value as raw kubeconfig YAML."
+            echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+          }
+
           chmod 600 $HOME/.kube/config
-        continue-on-error: true  # For demo purposes when no real cluster
 
       # -----------------------------------------------------------------------
       # UPDATE KUBERNETES MANIFESTS
@@ -158,6 +167,12 @@ jobs:
         run: |
           echo "📦 Deploying to Kubernetes..."
           cd k8s
+
+          # If kubeconfig was not configured (no KUBE_CONFIG), skip actual kubectl calls.
+          if [ ! -f "$HOME/.kube/config" ]; then
+            echo "No kubeconfig available. Skipping kubectl validation (demo mode)."
+            exit 0
+          fi
           
           # If kubeconfig exists but is invalid or the cluster is unreachable,
           # avoid failing the job - run in demo mode instead.
@@ -176,7 +191,6 @@ jobs:
           echo "✅ Kubernetes manifests validated successfully!"
           echo ""
           echo "In production, remove --dry-run=client to actually deploy"
-        continue-on-error: true
 
       # -----------------------------------------------------------------------
       # VERIFY DEPLOYMENT
@@ -240,6 +254,9 @@ jobs:
           target: 'http://localhost:8080'
           rules_file_name: '.zap/rules.tsv'
           cmd_options: '-a -j'
+          # Disable GitHub issue creation to avoid \"Resource not accessible by integration\" errors
+          # This still runs the scan and logs findings, but does not call the GitHub Issues API.
+          token: ''
         continue-on-error: true
 
       # -----------------------------------------------------------------------
