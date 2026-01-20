@@ -341,10 +341,6 @@ project-root/
 └── README.md                   # This file
 ```
 
-## 👥 Author
-
-DevOps CI/CD Project - Scaler Academy
-
 ## 📄 License
 
 This project is for educational purposes as part of the DevOps assessment.
