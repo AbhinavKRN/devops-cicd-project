@@ -511,7 +511,9 @@ Our Shift-Left Approach:
 - **Critical CVEs**: 0
 - **High CVEs**: 0
 - **Dependencies Scanned**: 45
-- **Status**: All dependencies secure
+- **Status**: All dependencies secure when NVD data is available  
+  > Note: The new NVD API enforces rate limits and may occasionally return HTTP 403 in CI.  
+  > To handle this real-world constraint, the pipeline is configured with `failOnError=false` and an optional `NVD_API_KEY` secret so that transient NVD outages do not break the build, while still generating SCA reports whenever data is available. This behavior is explicitly documented as part of the security limitations.
 
 #### Trivy Container Scan Results
 - **Critical**: 0
@@ -547,7 +549,8 @@ Our Shift-Left Approach:
 | In-memory storage | Data lost on restart | Medium |
 | No authentication | API publicly accessible | High (for production) |
 | No database | Not production-ready | Medium |
-| Manual KUBE_CONFIG | Requires cluster setup | Low |
+| Manual KUBE_CONFIG / demo-mode CD | Requires real cluster + kubeconfig for live deployment; current pipeline validates manifests in dry-run mode when no cluster is configured | Low |
+| NVD API rate limiting | OWASP Dependency-Check may fall back to cached/partial data when NVD is unavailable; build is configured not to fail on this but it can reduce SCA freshness | Low |
 | No integration tests | Limited E2E coverage | Medium |
 
 ### 7.2 Proposed Improvements
